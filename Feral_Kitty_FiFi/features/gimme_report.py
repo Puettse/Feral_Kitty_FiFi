@@ -593,3 +593,19 @@ async def setup(bot: commands.Bot):
             backfill_max_messages_per_channel=BACKFILL_MAX_MESSAGES_PER_CHANNEL,
         )
     )
+ # -----------
+ # Extension hook
+ # -----------
+ async def setup(bot: commands.Bot):
+-    bot.add_cog(
++    await bot.add_cog(
+         GimmeReport(
+             bot,
+             db_path=DB_PATH,
+             trigger=TRIGGER,
+             report_channel_id=REPORT_CHANNEL_ID,
+             join_leave_log_channel_ids=JOIN_LEAVE_LOG_CHANNEL_IDS,
+             ban_log_channel_id=BAN_LOG_CHANNEL_ID,
+             backfill_max_messages_per_channel=BACKFILL_MAX_MESSAGES_PER_CHANNEL,
+         )
+     )
