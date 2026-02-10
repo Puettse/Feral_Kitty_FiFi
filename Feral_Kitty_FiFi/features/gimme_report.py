@@ -506,19 +506,18 @@ class GimmeReport(commands.Cog):
             pass
 
     # ----- command trigger -----
-    @commands.Cog.listener()
-    async def on_message(self, message: discord.Message):
+    @commands.command(name="gimme")
+    async def gimme(self, ctx: commands.Context):
         try:
-            if not message.guild or getattr(message.author, "bot", False):
-                return
-            if message.content.strip() != self.trigger:
+            guild = ctx.guild
+            if not guild:
                 return
 
             # Backfill from logs
             for cid in self.join_leave_log_channel_ids:
                 try:
                     await backfill_from_log_channel(
-                        message.guild, cid, None, self.db, self.backfill_max
+                        guild, cid, None, self.db, self.backfill_max
                     )
                 except Exception:
                     pass
@@ -526,22 +525,22 @@ class GimmeReport(commands.Cog):
             if self.ban_log_channel_id:
                 try:
                     await backfill_from_log_channel(
-                        message.guild, self.ban_log_channel_id, "ban", self.db, self.backfill_max
+                        guild, self.ban_log_channel_id, "ban", self.db, self.backfill_max
                     )
                 except Exception:
                     pass
 
             # Ensure member cache
             try:
-                await message.guild.fetch_members(limit=None).flatten()  # type: ignore[attr-defined]
-                members_iter: Iterable[discord.Member] = message.guild.members
+                await guild.fetch_members(limit=None).flatten()  # type: ignore[attr-defined]
+                members_iter: Iterable[discord.Member] = guild.members
             except Exception:
                 # Fallback: use cached members only
-                members_iter = [m for m in message.guild.members if not getattr(m, "bot", False)]
+                members_iter = [m for m in guild.members if not getattr(m, "bot", False)]
 
             # Role list (exclude @everyone), sorted by position desc
             roles_sorted = sorted(
-                [r for r in message.guild.roles if not r.is_default()],
+                [r for r in guild.roles if not r.is_default()],
                 key=lambda r: r.position,
                 reverse=True,
             )
@@ -559,22 +558,22 @@ class GimmeReport(commands.Cog):
             # Resolve report channel
             report_ch = None
             if REPORT_CHANNEL_ID:
-                report_ch = message.guild.get_channel(REPORT_CHANNEL_ID)
+                report_ch = guild.get_channel(REPORT_CHANNEL_ID)
                 if report_ch is None:
                     try:
-                        report_ch = await message.guild.fetch_channel(REPORT_CHANNEL_ID)
+                        report_ch = await guild.fetch_channel(REPORT_CHANNEL_ID)
                     except Exception:
                         report_ch = None
             if not isinstance(report_ch, (discord.TextChannel, discord.Thread)):
-                report_ch = message.channel  # fallback to invoking channel
+                report_ch = ctx.channel  # fallback to invoking channel
 
             await report_ch.send(
-                content=f"📊 Roster report for **{message.guild.name}**",
+                content=f"📊 Roster report for **{guild.name}**",
                 file=discord.File(fp=xlsx_bytes, filename="server_roster.xlsx"),
             )
         except Exception:
             try:
-                await message.channel.send("❌ Failed to build report.")
+                await ctx.send("❌ Failed to build report.")
             except Exception:
                 pass
 
@@ -593,5 +592,3 @@ async def setup(bot: commands.Bot):
             backfill_max_messages_per_channel=BACKFILL_MAX_MESSAGES_PER_CHANNEL,
         )
     )
-
-
