@@ -434,9 +434,11 @@ class GimmeReport(commands.Cog):
     def cog_unload(self):
         self.db.close()
 
-    # ----- ensure commands are processed (module-only fix) -----
+    # --- module-only fix: make sure commands get processed ---
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
+        if getattr(message.author, "bot", False):
+            return
         await self.bot.process_commands(message)
 
     # ----- live tracking (best-effort) -----
@@ -521,17 +523,13 @@ class GimmeReport(commands.Cog):
             # Backfill from logs
             for cid in self.join_leave_log_channel_ids:
                 try:
-                    await backfill_from_log_channel(
-                        guild, cid, None, self.db, self.backfill_max
-                    )
+                    await backfill_from_log_channel(guild, cid, None, self.db, self.backfill_max)
                 except Exception:
                     pass
 
             if self.ban_log_channel_id:
                 try:
-                    await backfill_from_log_channel(
-                        guild, self.ban_log_channel_id, "ban", self.db, self.backfill_max
-                    )
+                    await backfill_from_log_channel(guild, self.ban_log_channel_id, "ban", self.db, self.backfill_max)
                 except Exception:
                     pass
 
@@ -540,7 +538,6 @@ class GimmeReport(commands.Cog):
                 await guild.fetch_members(limit=None).flatten()  # type: ignore[attr-defined]
                 members_iter: Iterable[discord.Member] = guild.members
             except Exception:
-                # Fallback: use cached members only
                 members_iter = [m for m in guild.members if not getattr(m, "bot", False)]
 
             # Role list (exclude @everyone), sorted by position desc
@@ -560,17 +557,18 @@ class GimmeReport(commands.Cog):
             # Build workbook bytes
             xlsx_bytes = build_workbook(roles_pairs, members_iter, self.db)
 
-            # Resolve report channel
+            # Resolve report channel (use configured ID if present)
             report_ch = None
-            if REPORT_CHANNEL_ID:
-                report_ch = guild.get_channel(REPORT_CHANNEL_ID)
+            if self.report_channel_id:
+                report_ch = guild.get_channel(self.report_channel_id)
                 if report_ch is None:
                     try:
-                        report_ch = await guild.fetch_channel(REPORT_CHANNEL_ID)
+                        report_ch = await guild.fetch_channel(self.report_channel_id)
                     except Exception:
                         report_ch = None
+
             if not isinstance(report_ch, (discord.TextChannel, discord.Thread)):
-                report_ch = ctx.channel  # fallback to invoking channel
+                report_ch = ctx.channel  # fallback
 
             await report_ch.send(
                 content=f"📊 Roster report for **{guild.name}**",
