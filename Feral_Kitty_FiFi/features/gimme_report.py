@@ -1,3 +1,4 @@
+```python
 # file: feral_kitty_fifi/feral_kitty_fifi/features/gimme_report.py
 # Python Cog: Roster/Ban/Leave XLSX report with optional backfill from log channels (Railway-friendly).
 # Deps (pip): discord.py openpyxl
@@ -434,6 +435,11 @@ class GimmeReport(commands.Cog):
     def cog_unload(self):
         self.db.close()
 
+    # ----- ensure commands are processed (module-only fix) -----
+    @commands.Cog.listener()
+    async def on_message(self, message: discord.Message):
+        await self.bot.process_commands(message)
+
     # ----- live tracking (best-effort) -----
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
@@ -592,3 +598,4 @@ async def setup(bot: commands.Bot):
             backfill_max_messages_per_channel=BACKFILL_MAX_MESSAGES_PER_CHANNEL,
         )
     )
+```
