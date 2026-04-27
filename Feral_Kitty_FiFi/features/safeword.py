@@ -10,7 +10,11 @@ from datetime import datetime, timezone
 import discord
 from discord.ext import commands
 
-import chat_exporter
+try:
+    import chat_exporter
+except ImportError:
+    chat_exporter = None
+    print("[WARNING] chat_exporter NOT installed — transcript disabled")
 
 from ..utils.discord_resolvers import resolve_role_any, resolve_channel_any, normalize
 from ..utils.io_helpers import aio_retry
