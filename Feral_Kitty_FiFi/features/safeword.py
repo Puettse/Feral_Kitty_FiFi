@@ -1,4 +1,4 @@
-# safeword.py (FINAL - PRODUCTION SAFE)
+# safeword.py (FINAL - CRASH SAFE + HTML FALLBACK)
 
 from __future__ import annotations
 from dataclasses import dataclass
@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 import discord
 from discord.ext import commands
 
+# SAFE IMPORT (NO CRASH)
 try:
     import chat_exporter
 except ImportError:
@@ -42,9 +43,12 @@ class Safeword(commands.Cog):
         return (self.bot.config or {}).get("safeword") or {}
 
     # ---------------------------
-    # HTML TRANSCRIPT EXPORT
+    # HTML EXPORT (SAFE)
     # ---------------------------
     async def _export_html(self, channel: discord.TextChannel, limit: int):
+        if not chat_exporter:
+            return None
+
         try:
             transcript = await chat_exporter.export(
                 channel,
@@ -67,7 +71,7 @@ class Safeword(commands.Cog):
             return None
 
     # ---------------------------
-    # SLOWMODE CONTROL
+    # SLOWMODE APPLY
     # ---------------------------
     async def _apply_slowmode(self, channel: discord.TextChannel):
         try:
@@ -110,7 +114,7 @@ class Safeword(commands.Cog):
             return "error"
 
     # ---------------------------
-    # LISTENER
+    # LISTENER (STRICT MATCH)
     # ---------------------------
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
@@ -124,7 +128,7 @@ class Safeword(commands.Cog):
             trigger = (cfg.get("trigger") or "!STOP!").strip()
             release = (cfg.get("release_trigger") or "!Release").strip()
 
-            # STRICT MATCH ONLY
+            # STRICT ONLY
             if content == trigger:
                 await self._handle_trigger(message)
 
@@ -144,7 +148,6 @@ class Safeword(commands.Cog):
         if not isinstance(ch, discord.TextChannel):
             return
 
-        # prevent duplicate processing
         if ch.id in self._processing:
             return
 
@@ -176,7 +179,7 @@ class Safeword(commands.Cog):
                     allowed_mentions=discord.AllowedMentions(roles=True)
                 )
 
-            # alert message
+            # alert embed
             text = (cfg.get("lock_message") or {}).get("text") or "🛑 Safeword triggered."
             img = (cfg.get("lock_message") or {}).get("image_url")
 
@@ -196,20 +199,27 @@ class Safeword(commands.Cog):
 
             await ch.send(embed=embed)
 
-            # export transcript
+            # transcript logging
             log_id = cfg.get("log_channel_id")
 
             if isinstance(log_id, int):
                 log_ch = resolve_channel_any(message.guild, log_id)
 
                 if isinstance(log_ch, discord.TextChannel):
-                    file = await self._export_html(ch, 25)
 
-                    if file:
-                        await log_ch.send(
-                            content=f"📦 Safeword triggered in {ch.mention}",
-                            file=file
-                        )
+                    if chat_exporter:
+                        file = await self._export_html(ch, 25)
+
+                        if file:
+                            await log_ch.send(
+                                content=f"📦 Safeword triggered in {ch.mention}",
+                                file=file
+                            )
+                        else:
+                            await log_ch.send("⚠️ Transcript failed to generate.")
+
+                    else:
+                        await log_ch.send("⚠️ Transcript unavailable (chat_exporter not installed)")
 
             # apply slowmode
             err = await self._apply_slowmode(ch)
@@ -221,7 +231,7 @@ class Safeword(commands.Cog):
             self._processing.remove(ch.id)
 
     # ---------------------------
-    # RELEASE HANDLER
+    # RELEASE
     # ---------------------------
     async def _handle_release(self, message: discord.Message):
 
@@ -232,7 +242,6 @@ class Safeword(commands.Cog):
 
         cfg = self._cfg()
 
-        # strict staff check
         if not any(normalize(r.name) == normalize(STAFF_FALLBACK_NAME) for r in message.author.roles):
             await ch.send("❌ Staff only.")
             return
@@ -241,7 +250,6 @@ class Safeword(commands.Cog):
 
         await ch.send("✅ Safeword released. Slowmode restored.")
 
-        # log release
         log_id = cfg.get("log_channel_id")
 
         if isinstance(log_id, int):
