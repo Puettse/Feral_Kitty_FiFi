@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 from dataclasses import dataclass
+from types import SimpleNamespace
 from typing import Any, Dict, Optional
 import asyncio
 import io
@@ -27,9 +28,6 @@ class SlowmodeSnapshot:
     prior_slowmode: Optional[int]
 
 
-STAFF_FALLBACK_NAME = "Staff"
-
-
 class Safeword(commands.Cog):
 
     def __init__(self, bot: commands.Bot):
@@ -41,6 +39,14 @@ class Safeword(commands.Cog):
 
     def _cfg(self) -> Dict[str, Any]:
         return (self.bot.config or {}).get("safeword") or {}
+
+    def _is_blocked(self, author: Any, cfg: Dict[str, Any]) -> bool:
+        if not isinstance(author, discord.Member):
+            return False
+        blocked = cfg.get("blocked_roles") or []
+        blocked_names = {normalize(n) for n in blocked if isinstance(n, str)}
+        blocked_ids = {n for n in blocked if isinstance(n, int)}
+        return any(r.id in blocked_ids or normalize(r.name) in blocked_names for r in author.roles)
 
     # ---------------------------
     # HTML EXPORT (SAFE)
@@ -127,6 +133,10 @@ class Safeword(commands.Cog):
             content = message.content.strip()
             trigger = (cfg.get("trigger") or "!STOP!").strip()
             release = (cfg.get("release_trigger") or "!Release").strip()
+
+            # blocked roles (e.g. jailed) cannot use safeword commands
+            if content in (trigger, release) and self._is_blocked(message.author, cfg):
+                return
 
             # STRICT ONLY
             if content == trigger:
@@ -242,7 +252,8 @@ class Safeword(commands.Cog):
 
         cfg = self._cfg()
 
-        if not any(normalize(r.name) == normalize(STAFF_FALLBACK_NAME) for r in message.author.roles):
+        # honor the configured roles_whitelist (falls back to "Staff" when unset)
+        if not self._staff_check(SimpleNamespace(author=message.author)):
             await ch.send("❌ Staff only.")
             return
 

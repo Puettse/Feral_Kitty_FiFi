@@ -271,13 +271,12 @@ def build_workbook(role_list: List[Tuple[int, str]], members: Iterable[discord.M
     wb_add_header(ws1, base_headers + role_headers)
 
     for m in members:
-        user = m._user if hasattr(m, "_user") else m.guild.get_member(m.id).user if hasattr(m, "guild") else m  # fallback
-        uname = f"{user.name}#{user.discriminator}" if getattr(user, "discriminator", "0") != "0" else user.name
+        uname = f"{m.name}#{m.discriminator}" if getattr(m, "discriminator", "0") != "0" else m.name
         row = [
-            iso(getattr(user, "created_at", None)),
+            iso(getattr(m, "created_at", None)),
             iso(getattr(m, "joined_at", None)),
             uname,
-            str(user.id),
+            str(m.id),
         ]
         member_role_ids = {r.id for r in getattr(m, "roles", [])}
         row.extend([(rid in member_role_ids) for rid, _name in role_list])
@@ -285,7 +284,7 @@ def build_workbook(role_list: List[Tuple[int, str]], members: Iterable[discord.M
 
         # Best-effort backfill into DB
         try:
-            db.upsert_user(user.id, uname, iso(getattr(user, "created_at", None)))
+            db.upsert_user(m.id, uname, iso(getattr(m, "created_at", None)))
         except Exception:
             pass
 
@@ -434,24 +433,16 @@ class GimmeReport(commands.Cog):
     def cog_unload(self):
         self.db.close()
 
-    # --- module-only fix: make sure commands get processed ---
-    @commands.Cog.listener()
-    async def on_message(self, message: discord.Message):
-        if getattr(message.author, "bot", False):
-            return
-        await self.bot.process_commands(message)
-
     # ----- live tracking (best-effort) -----
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
         try:
-            user = member._user if hasattr(member, "_user") else member.guild.get_member(member.id).user
-            uname = f"{user.name}#{user.discriminator}" if getattr(user, "discriminator", "0") != "0" else user.name
-            self.db.upsert_user(user.id, uname, iso(getattr(user, "created_at", None)))
+            uname = f"{member.name}#{member.discriminator}" if getattr(member, "discriminator", "0") != "0" else member.name
+            self.db.upsert_user(member.id, uname, iso(getattr(member, "created_at", None)))
             self.db.insert_event(
-                f"live:join:{member.guild.id}:{user.id}:{int(discord.utils.utcnow().timestamp()*1000)}",
+                f"live:join:{member.guild.id}:{member.id}:{int(discord.utils.utcnow().timestamp()*1000)}",
                 "live",
-                user.id,
+                member.id,
                 uname,
                 "join",
                 iso(getattr(member, "joined_at", discord.utils.utcnow())),
@@ -533,12 +524,8 @@ class GimmeReport(commands.Cog):
                 except Exception:
                     pass
 
-            # Ensure member cache
-            try:
-                await guild.fetch_members(limit=None).flatten()  # type: ignore[attr-defined]
-                members_iter: Iterable[discord.Member] = guild.members
-            except Exception:
-                members_iter = [m for m in guild.members if not getattr(m, "bot", False)]
+            # With the members intent enabled, guild.members is populated at startup.
+            members_iter: Iterable[discord.Member] = guild.members
 
             # Role list (exclude @everyone), sorted by position desc
             roles_sorted = sorted(

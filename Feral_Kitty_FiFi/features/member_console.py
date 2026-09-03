@@ -57,6 +57,8 @@ class MemberRoleConsoleView(discord.ui.View):
         tokens = [t for t in tokens if t]
         if not tokens:
             await interaction.response.send_message("❌ Provide at least one role.", ephemeral=True); return
+        # Multiple role edits can exceed the 3s interaction window; ack first.
+        await interaction.response.defer(ephemeral=True)
         successes, fails = [], []
         for t in tokens:
             role = resolve_role_any(interaction.guild, t)
@@ -79,7 +81,7 @@ class MemberRoleConsoleView(discord.ui.View):
         if successes: msg += "✅ " + ", ".join(successes) + "\n"
         if fails: msg += "❌ " + ", ".join([f"{n} ({why})" for n, why in fails])
         if not msg: msg = "ℹ️ No changes."
-        await interaction.response.send_message(msg, ephemeral=True)
+        await interaction.followup.send(msg, ephemeral=True)
         await self.refresh(interaction)
 
     @discord.ui.button(label="Add Roles", style=discord.ButtonStyle.success)

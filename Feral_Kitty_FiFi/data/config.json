@@ -16,8 +16,12 @@
       "Red Guard",
       "The Father"
     ],
-    "roles_whitelist": ["Staff"],
-    "blocked_roles": ["jailed"],
+    "roles_whitelist": [
+      "Staff"
+    ],
+    "blocked_roles": [
+      "jailed"
+    ],
     "cooldown_seconds": 30,
     "lock_message": {
       "text": "!STOP! HAS BEEN CALLED; CHANNEL IS LOCKED PENDING REVIEW, PLEASE STANDBY. THANK YOU FOR YOUR PATIENCE.",
@@ -74,7 +78,10 @@
       "gated": "GATED",
       "member": "Member",
       "jailed": "jailed",
-      "staff_names": ["Staff", "Security"],
+      "staff_names": [
+        "Staff",
+        "Security"
+      ],
       "staff_ids": []
     },
     "ids": {
@@ -86,13 +93,19 @@
   "tickets": {
     "log_channel_id": 1439353009405558865,
     "staff_role_ids": [],
-    "roles_to_ping_names": ["Staff", "SECURITY"],
+    "roles_to_ping_names": [
+      "Staff",
+      "SECURITY"
+    ],
     "panel": {
       "hub_channel_id": 1400631144004976773,
       "image_url": "https://media.discordapp.net/attachments/1400677535980978246/1451601705652322466/Untitled_design.png",
       "title": "⛧ ＰＲ〇ＪΞＣＴ Ｄ〇ＰΛΜＩΝΞ ＴＩＣΚΞＴS ⛧",
       "description": "ᴛᴏ ᴏᴘᴇɴ ᴀ ᴛɪᴄᴋᴇᴛ, ᴘʀᴇꜱꜱ ᴛʜᴇ ʙᴜᴛᴛᴏɴ ʙᴇʟᴏᴡ ᴀɴᴅ ꜱᴇʟᴇᴄᴛ ᴀɴ ᴏᴘᴛɪᴏɴ ꜰʀᴏᴍ ᴛʜᴇ ᴅʀᴏᴘᴅᴏᴡɴ.",
-      "colors": ["#7C3AED", "#FF3D8D"]
+      "colors": [
+        "#7C3AED",
+        "#FF3D8D"
+      ]
     },
     "panel_options": [
       {
@@ -177,74 +190,98 @@
     "active": {},
     "records": [],
     "allow_user_close": false
+  },
+  "profile_roles": {
+    "categories": [
+      {
+        "key": "age_group",
+        "label": "Age Group",
+        "multi": false,
+        "required": true,
+        "roles": [
+          "18-22",
+          "23-26",
+          "27-29",
+          "30-35",
+          "36-40+"
+        ]
+      },
+      {
+        "key": "gender",
+        "label": "Gender",
+        "multi": false,
+        "required": true,
+        "roles": [
+          "female",
+          "male",
+          "non binary",
+          "trans"
+        ]
+      },
+      {
+        "key": "location",
+        "label": "Region",
+        "multi": false,
+        "required": true,
+        "roles": [
+          "Africa",
+          "Asia",
+          "Australia",
+          "Europe",
+          "North America",
+          "South America"
+        ]
+      },
+      {
+        "key": "interests",
+        "label": "Interests",
+        "multi": true,
+        "required": false,
+        "roles": [
+          "Activities",
+          "Events",
+          "Giveaways",
+          "Movie night",
+          "Partnership ping",
+          "Server updates",
+          "VC ping"
+        ]
+      },
+      {
+        "key": "touch_preferences",
+        "label": "Touch Preferences",
+        "multi": false,
+        "required": true,
+        "roles": [
+          "No touch",
+          "ask to touch",
+          "ok to touch"
+        ]
+      },
+      {
+        "key": "favorite_games",
+        "label": "Favorite Games",
+        "multi": true,
+        "required": false,
+        "roles": [
+          "Among us",
+          "BlackJack",
+          "Borderlands 3",
+          "Call of duty",
+          "Fortnite",
+          "Genshin impact",
+          "Minecraft",
+          "Overwatch 2",
+          "Roblox",
+          "Truth or Dare",
+          "Truth or Dare 18+",
+          "Mobile",
+          "Nintendo",
+          "PC",
+          "PlayStation",
+          "Xbox"
+        ]
+      }
+    ]
   }
 }
-"categories": [
-  {
-    "key": "age_group",
-    "label": "Age Group",
-    "multi": false,
-    "required": true,
-    "roles": ["18-22", "23-26", "27-29", "30-35", "36-40+"]
-  },
-  {
-    "key": "gender",
-    "label": "Gender",
-    "multi": false,
-    "required": true,
-    "roles": ["female", "male", "non binary", "trans"]
-  },
-  {
-    "key": "location",
-    "label": "Region",
-    "multi": false,
-    "required": true,
-    "roles": ["Africa", "Asia", "Australia", "Europe", "North America", "South America"]
-  },
-  {
-    "key": "interests",
-    "label": "Interests",
-    "multi": true,
-    "required": false,
-    "roles": [
-      "Activities",
-      "Events",
-      "Giveaways",
-      "Movie night",
-      "Partnership ping",
-      "Server updates",
-      "VC ping"
-    ]
-  },
-  {
-    "key": "touch_preferences",
-    "label": "Touch Preferences",
-    "multi": false,
-    "required": true,
-    "roles": ["No touch", "ask to touch", "ok to touch"]
-  },
-  {
-    "key": "favorite_games",
-    "label": "Favorite Games",
-    "multi": true,
-    "required": false,
-    "roles": [
-      "Among us",
-      "BlackJack",
-      "Borderlands 3",
-      "Call of duty",
-      "Fortnite",
-      "Genshin impact",
-      "Minecraft",
-      "Overwatch 2",
-      "Roblox",
-      "Truth or Dare",
-      "Truth or Dare 18+",
-      "Mobile",
-      "Nintendo",
-      "PC",
-      "PlayStation",
-      "Xbox"
-    ]
-  }
-]
