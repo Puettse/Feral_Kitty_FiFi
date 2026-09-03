@@ -150,6 +150,8 @@ class ReactionRoleBuilderView(discord.ui.View):
         tgt = interaction.guild.get_channel(self.state.target_channel_id) if self.state.target_channel_id else self.ctx.channel
         if not isinstance(tgt, discord.TextChannel):
             await interaction.response.send_message("❌ Target channel invalid.", ephemeral=True); return
+        # Posting + adding reactions can exceed the 3s interaction window; ack first.
+        await interaction.response.defer(ephemeral=True)
         panel_embed = discord.Embed(color=discord.Color.blurple())
         panel_embed.title = "Choose your roles"
         panel_embed.description = self.state.as_description(interaction.guild)
@@ -171,7 +173,7 @@ class ReactionRoleBuilderView(discord.ui.View):
         }
         self.cog.bot.config.setdefault("reaction_panels", []).append(panel)
         await save_config(self.cog.bot.config)
-        await interaction.response.send_message(f"✅ Posted panel in {tgt.mention}.", ephemeral=True)
+        await interaction.followup.send(f"✅ Posted panel in {tgt.mention}.", ephemeral=True)
         await interaction.message.edit(view=None); self.stop()
 
     @discord.ui.button(label="Cancel", style=discord.ButtonStyle.danger)

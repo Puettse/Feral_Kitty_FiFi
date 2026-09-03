@@ -151,7 +151,7 @@ def _resolve_staff_role_ids(guild: discord.Guild, cfg: Dict[str, Any]) -> List[i
 # UI: panel + selection -> create channel
 # ----------------------------
 class TicketSelect(discord.ui.Select):
-    def __init__(self, cog: 'TicketChannelsCog', hub: discord.TextChannel):
+    def __init__(self, cog: 'TicketChannelsCog', hub: Optional[discord.TextChannel] = None):
         self.cog = cog
         self.hub = hub
         cfg = tickets_cfg(cog.bot)
@@ -181,16 +181,19 @@ class TicketSelect(discord.ui.Select):
         if not interaction.guild or not isinstance(user, discord.Member):
             return await interaction.response.send_message('Only server members can open tickets.', ephemeral=True)
 
+        # Channel creation can exceed the 3s interaction window; ack first.
+        await interaction.response.defer(ephemeral=True)
+
         cfg = tickets_cfg(self.cog.bot)
         value = self.values[0]
         opt = _option_for_value(cfg, value)
         if not opt:
-            return await interaction.response.send_message('That ticket option is unavailable.', ephemeral=True)
+            return await interaction.followup.send('That ticket option is unavailable.', ephemeral=True)
 
         parent_id = opt.get('parent_category_id')
         parent = interaction.guild.get_channel(int(parent_id)) if parent_id else None
         if parent_id and not isinstance(parent, discord.CategoryChannel):
-            return await interaction.response.send_message('Configured ticket category is invalid.', ephemeral=True)
+            return await interaction.followup.send('Configured ticket category is invalid.', ephemeral=True)
 
         # resolve staff ids
         opt_ids = [int(x) for x in (opt.get('staff_role_ids') or []) if isinstance(x, int) or str(x).isdigit()]
@@ -224,9 +227,9 @@ class TicketSelect(discord.ui.Select):
                 name=base_name, category=parent, overwrites=overwrites or None, reason=f'Ticket opened by {user} ({value})'
             )
         except discord.Forbidden:
-            return await interaction.response.send_message('I lack permission to create ticket channels.', ephemeral=True)
+            return await interaction.followup.send('I lack permission to create ticket channels.', ephemeral=True)
         except discord.HTTPException as e:
-            return await interaction.response.send_message(f'Failed to create ticket: {e}', ephemeral=True)
+            return await interaction.followup.send(f'Failed to create ticket: {e}', ephemeral=True)
 
         # optional voice
         voice_ch: Optional[discord.VoiceChannel] = None
@@ -300,11 +303,11 @@ class TicketSelect(discord.ui.Select):
         except Exception:
             pass
 
-        await interaction.response.send_message(f'✅ Ticket created: {text_ch.mention}', ephemeral=True)
+        await interaction.followup.send(f'✅ Ticket created: {text_ch.mention}', ephemeral=True)
 
 
 class TicketPanelView(discord.ui.View):
-    def __init__(self, cog: 'TicketChannelsCog', hub: discord.TextChannel):
+    def __init__(self, cog: 'TicketChannelsCog', hub: Optional[discord.TextChannel] = None):
         super().__init__(timeout=None)
         self.add_item(TicketSelect(cog, hub))
 
@@ -370,6 +373,9 @@ class TicketChannelsCog(commands.Cog):
 
     def __init__(self, bot: commands.Bot):
         self.bot = bot
+        # Re-register the persistent panel view so posted panels keep working
+        # after a restart (the select carries a fixed custom_id).
+        bot.add_view(TicketPanelView(self))
 
     # ---- post panel ----
     async def _post_panel(self, hub: discord.TextChannel):

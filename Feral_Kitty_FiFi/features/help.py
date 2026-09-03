@@ -17,7 +17,7 @@ def _embed(guild: Optional[discord.Guild]) -> discord.Embed:
         name="Everyone (except `jailed`)",
         value=(
             "`!STOP!` — Lock current channel; ping configured roles; export last messages.\n"
-            "`!pass <6-digit>` — Complete the welcome passphrase challenge (DM or server)."
+            "Verification and profiles use the **Age Check** / **About Me** buttons on their panels."
         ),
         inline=False,
     )
@@ -37,14 +37,18 @@ def _embed(guild: Optional[discord.Guild]) -> discord.Embed:
             "`!drybuild` — Plan role build (JSON).\n"
             "`!drythepurge` — Plan purge (JSON).\n"
             "`!exportroles` — Export all roles (JSON).\n"
-            "`!reloadconfig` — Reload `data/config.json`.\n"
-            "`!drychat [count]` — Seed N messages for testing.\n"
+            "`!reloadconfig` — Reload the config file.\n"
             "`!mypeople` — Export members to CSV.\n"
+            "`!gimme` — Roster/ban/leave XLSX report.\n"
             "`!rolespanel` — Open reaction-role panel builder.\n"
             "`!rolespanel list` — List saved panels.\n"
             "`!rolespanel remove <message_id>` — Remove panel & try delete message.\n"
             "`!rolesconsole` — Member role console (add/remove/toggle).\n"
-            "`!welcomepanel` — Configure welcome message, autorole, passphrase gate."
+            "`!channelpanel` — Channel/category builder.\n"
+            "`!schedulepanel` — Scheduled-message console.\n"
+            "`!profilepanel` — Publish/update the About Me panel.\n"
+            "`!welcome` — Publish/update the Verify panel here.\n"
+            "`!ticketspanel_chan` — Post/manage the ticket panel."
         ),
         inline=False,
     )
@@ -60,7 +64,7 @@ def _embed(guild: Optional[discord.Guild]) -> discord.Embed:
         ),
         inline=False,
     )
-    emb.set_footer(text="You can also type $help$ or !helpmejon")
+    emb.set_footer(text="This menu: !helpmejon")
     return emb
 
 class HelpCog(commands.Cog):

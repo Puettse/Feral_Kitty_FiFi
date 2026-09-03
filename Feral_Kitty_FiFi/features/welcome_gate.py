@@ -194,19 +194,22 @@ class UnderageVerifyPromptView(discord.ui.View):
         if interaction.user.id != self.user_id:
             return await interaction.response.send_message("❌ This button isn’t for you.", ephemeral=True)
 
+        # Channel creation can exceed the 3s interaction window; ack first.
+        await interaction.response.defer(ephemeral=True)
+
         # Resolve guild + member even if the interaction is in DM (interaction.guild is None)
         guild = interaction.guild or self.cog.bot.get_guild(self.guild_id)
         if not guild:
-            return await interaction.response.send_message("❌ Server context missing.", ephemeral=True)
+            return await interaction.followup.send("❌ Server context missing.", ephemeral=True)
         member = guild.get_member(self.user_id) or await guild.fetch_member(self.user_id)
         if not member:
-            return await interaction.response.send_message("❌ Member not found.", ephemeral=True)
+            return await interaction.followup.send("❌ Member not found.", ephemeral=True)
 
         ok, msg = await self.cog._open_ticket_for(member, value)
         if ok:
-            await interaction.response.send_message(f"✅ Opened: {msg}", ephemeral=True)
+            await interaction.followup.send(f"✅ Opened: {msg}", ephemeral=True)
         else:
-            await interaction.response.send_message(f"❌ {msg}", ephemeral=True)
+            await interaction.followup.send(f"❌ {msg}", ephemeral=True)
 
     @discord.ui.button(label="Open ID Verify Ticket", style=discord.ButtonStyle.primary, emoji="🪪")
     async def idv_btn(self, interaction: discord.Interaction, _: discord.ui.Button):
@@ -226,16 +229,18 @@ class AgeModal(discord.ui.Modal):
 
     async def on_submit(self, interaction: discord.Interaction):
         try:
+            # Jailing (bulk role edits) can exceed the 3s interaction window; ack first.
+            await interaction.response.defer(ephemeral=True)
             guild = interaction.guild or self.cog.bot.get_guild(self.guild_id)
             if not guild:
-                return await interaction.response.send_message("❌ Missing guild.", ephemeral=True)
+                return await interaction.followup.send("❌ Missing guild.", ephemeral=True)
             member = guild.get_member(self.user_id) or await guild.fetch_member(self.user_id)
             if not member:
-                return await interaction.response.send_message("❌ Member not found.", ephemeral=True)
+                return await interaction.followup.send("❌ Member not found.", ephemeral=True)
 
             dob = _parse_yyyy_mm_dd(self.dob.value)
             if not dob:
-                return await interaction.response.send_message("❌ DOB must be YYYY-MM-DD.", ephemeral=True)
+                return await interaction.followup.send("❌ DOB must be YYYY-MM-DD.", ephemeral=True)
 
             # log the DOB (your policy requires this)
             await self.cog._log_age_check_embed(guild, member, dob)
@@ -260,7 +265,7 @@ class AgeModal(discord.ui.Modal):
                     color=discord.Color.orange(),
                     timestamp=datetime.now(timezone.utc),
                 )
-                await interaction.response.send_message(
+                await interaction.followup.send(
                     embed=info,
                     view=UnderageVerifyPromptView(self.cog, guild.id, member.id),
                     ephemeral=True,
@@ -309,12 +314,12 @@ class AgeModal(discord.ui.Modal):
             code = self.cog._start_or_refresh_challenge(member)
             embed = self.cog._passcode_embed(guild, code)
             view = PasscodePromptView(self.cog, guild.id, member.id)
-            await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+            await interaction.followup.send(embed=embed, view=view, ephemeral=True)
             await _log(self.cog.bot, guild, f"🔐 Passcode issued to {member.mention}.")
         except Exception as e:
             await _log(self.cog.bot, interaction.guild, f"❌ AgeModal error: {type(e).__name__}: {e}")
             try:
-                await interaction.response.send_message("❌ Something went wrong. Staff has been notified.", ephemeral=True)
+                await interaction.followup.send("❌ Something went wrong. Staff has been notified.", ephemeral=True)
             except Exception:
                 pass
 
@@ -412,7 +417,7 @@ class WelcomeGate(commands.Cog):
         emb.add_field(name="User", value=f"{member} ({member.mention})", inline=False)
         emb.add_field(name="User ID", value=str(member.id), inline=True)
         emb.add_field(name="DOB Entered", value=dob.isoformat(), inline=True)
-        emb.set_thumbnail(url=member.display_avatar.url if member.display_avatar else discord.Embed.Empty)
+        emb.set_thumbnail(url=member.display_avatar.url)
         try:
             await ch.send(embed=emb, allowed_mentions=discord.AllowedMentions.none())
         except Exception:

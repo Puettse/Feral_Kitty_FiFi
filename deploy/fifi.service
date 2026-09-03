@@ -1,0 +1,23 @@
+[Unit]
+Description=Feral Kitty FiFi Discord bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=fifi
+Group=fifi
+WorkingDirectory=/opt/fifi
+EnvironmentFile=/etc/fifi/fifi.env
+ExecStart=/opt/fifi/.venv/bin/python run.py
+Restart=always
+RestartSec=5
+
+# Hardening (relax if a feature needs more access)
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=true
+ReadWritePaths=/opt/fifi/data
+
+[Install]
+WantedBy=multi-user.target
