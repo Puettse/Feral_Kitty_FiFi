@@ -1,0 +1,12 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+
+# Runtime data written at repo root by the bot (see config.py CONFIG_PATH)
+/data/
+*.sqlite
+
+# Environment
+.env
+.venv/
+venv/
